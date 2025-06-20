@@ -130,4 +130,29 @@ router.post('/appointment/:id/remove-product/:index', authMiddleware, async (req
   res.redirect(`/client/${appt.clientId}`);
 });
 
+router.get('/agendamentos-por-dia', authMiddleware, async (req, res) => {
+  const { date } = req.query;
+
+  if (!date) {
+    return res.render('agenda-dia', { date: null, results: [] });
+  }
+
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+
+const agendamentos = await Appointment.find({
+  date: { $gte: start, $lte: end }
+}).populate('clientId');
+
+// FILTRA apenas os que têm serviços
+const apenasComServicos = agendamentos.filter(a => a.services.length > 0);
+
+res.render('agenda-dia', { date, results: apenasComServicos });
+
+});
+
+
 module.exports = router;

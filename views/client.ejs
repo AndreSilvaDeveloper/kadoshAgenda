@@ -48,37 +48,42 @@
       <li class="p-4 bg-gray-50 rounded border">
         <strong class="block mb-2"><%= a.date.toLocaleDateString() %></strong>
 
-        <div>
-          <span class="font-semibold">Serviços:</span>
-          <ul class="list-disc pl-6">
-            <% a.services.forEach((s, i) => { %>
-              <li class="flex justify-between">
-                <span><%= s.name %> - R$ <%= s.price %></span>
-                <form action="/appointment/<%= a._id %>/remove-service/<%= i %>" method="POST" onsubmit="return confirm('Excluir serviço?')">
-                  <button class="text-red-600 text-sm hover:underline">Excluir</button>
-                </form>
-              </li>
-            <% }) %>
-          </ul>
-        </div>
+        <% if (a.services.length > 0) { %>
+          <div>
+            <span class="font-semibold">Serviços:</span>
+            <ul class="list-disc pl-6">
+              <% a.services.forEach((s, i) => { %>
+                <li class="flex justify-between">
+                  <span><%= s.name %> - R$ <%= s.price %></span>
+                  <form action="/appointment/<%= a._id %>/remove-service/<%= i %>" method="POST" onsubmit="return confirm('Excluir serviço?')">
+                    <button class="text-red-600 text-sm hover:underline">Excluir</button>
+                  </form>
+                </li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } %>
 
-        <div class="mt-2">
-          <span class="font-semibold">Produtos:</span>
-          <ul class="list-disc pl-6">
-            <% a.products.forEach((p, i) => { %>
-              <li class="flex justify-between">
-                <span><%= p.name %> - R$ <%= p.price %></span>
-                <form action="/appointment/<%= a._id %>/remove-product/<%= i %>" method="POST" onsubmit="return confirm('Excluir produto?')">
-                  <button class="text-red-600 text-sm hover:underline">Excluir</button>
-                </form>
-              </li>
-            <% }) %>
-          </ul>
-        </div>
+        <% if (a.products.length > 0) { %>
+          <div class="mt-2">
+            <span class="font-semibold">Produtos:</span>
+            <ul class="list-disc pl-6">
+              <% a.products.forEach((p, i) => { %>
+                <li class="flex justify-between">
+                  <span><%= p.name %> - R$ <%= p.price %></span>
+                  <form action="/appointment/<%= a._id %>/remove-product/<%= i %>" method="POST" onsubmit="return confirm('Excluir produto?')">
+                    <button class="text-red-600 text-sm hover:underline">Excluir</button>
+                  </form>
+                </li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } %>
       </li>
     <% } %>
   <% }) %>
 </ul>
+
 
 
     <div class="mt-6">
