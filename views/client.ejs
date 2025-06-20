@@ -61,19 +61,19 @@
                         <%= s.name %> - R$ <%= s.price %><br>
                         <% if (s.payments && s.payments.length > 0) { %>
                           <ul class="ml-4 text-sm text-gray-800 mt-1">
-                            <% s.payments.forEach(function(p) { %>
+                            <% s.payments.forEach(function(p, j) { %>
                               <li>
                                 💵 Pago: R$ <%= p.amount %> em <%= new Date(p.paidAt).toLocaleDateString('pt-BR') %>
                                 <% if (p.description) { %>
                                   <br>📝 <em><%= p.description %></em>
                                 <% } %>
+                                <form action="/appointment/<%= a._id %>/remove-payment/service/<%= i %>/<%= j %>" method="POST" class="inline">
+                                  <button class="text-red-500 text-sm mt-1 hover:underline" onclick="return confirm('Remover pagamento?')">Remover</button>
+                                </form>
                               </li>
                             <% }); %>
                           </ul>
                         <% } %>
-                        <form action="/appointment/<%= a._id %>/remove-payment/service/<%= i %>" method="POST" class="inline">
-                          <button class="text-red-500 text-sm mt-1 hover:underline" onclick="return confirm('Remover pagamento?')">Remover</button>
-                        </form>
                       </span>
                       <div class="flex gap-2">
                         <form action="/appointment/<%= a._id %>/remove-service/<%= i %>" method="POST" onsubmit="return confirm('Excluir serviço?')">
@@ -100,19 +100,19 @@
                         <%= p.name %> - R$ <%= p.price %><br>
                         <% if (p.payments && p.payments.length > 0) { %>
                           <ul class="ml-4 text-sm text-gray-800 mt-1">
-                            <% p.payments.forEach(function(pg) { %>
+                            <% p.payments.forEach(function(pg, j) { %>
                               <li>
                                 💵 Pago: R$ <%= pg.amount %> em <%= new Date(pg.paidAt).toLocaleDateString('pt-BR') %>
                                 <% if (pg.description) { %>
                                   <br>📝 <em><%= pg.description %></em>
                                 <% } %>
+                                <form action="/appointment/<%= a._id %>/remove-payment/product/<%= i %>/<%= j %>" method="POST" class="inline">
+                                  <button class="text-red-500 text-sm mt-1 hover:underline" onclick="return confirm('Remover pagamento?')">Remover</button>
+                                </form>
                               </li>
                             <% }); %>
                           </ul>
                         <% } %>
-                        <form action="/appointment/<%= a._id %>/remove-payment/product/<%= i %>" method="POST" class="inline">
-                          <button class="text-red-500 text-sm mt-1 hover:underline" onclick="return confirm('Remover pagamento?')">Remover</button>
-                        </form>
                       </span>
                       <div class="flex gap-2">
                         <form action="/appointment/<%= a._id %>/remove-product/<%= i %>" method="POST" onsubmit="return confirm('Excluir produto?')">

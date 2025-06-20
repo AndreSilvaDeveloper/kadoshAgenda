@@ -103,17 +103,8 @@ router.post('/appointment', authMiddleware, async (req, res) => {
     `);
   }
 
-  parsedServices.forEach(s => {
-    s.paid = 0;
-    s.paidAt = null;
-    s.description = '';
-  });
-
-  parsedProducts.forEach(p => {
-    p.paid = 0;
-    p.paidAt = null;
-    p.description = '';
-  });
+  parsedServices.forEach(s => s.payments = []);
+  parsedProducts.forEach(p => p.payments = []);
 
   await Appointment.create({
     clientId,
@@ -137,11 +128,11 @@ router.get('/client/:id', authMiddleware, async (req, res) => {
   appointments.forEach(appt => {
     appt.services.forEach(s => {
       totalService += s.price;
-      totalPaid += s.paid || 0;
+      totalPaid += (s.payments || []).reduce((sum, p) => sum + p.amount, 0);
     });
     appt.products.forEach(p => {
       totalProduct += p.price;
-      totalPaid += p.paid || 0;
+      totalPaid += (p.payments || []).reduce((sum, p) => sum + p.amount, 0);
     });
   });
 
@@ -175,6 +166,50 @@ router.post('/appointment/:id/remove-product/:index', authMiddleware, async (req
   res.redirect(`/client/${appt.clientId}`);
 });
 
+router.post('/appointment/:id/remove-payment/service/:sIndex/:pIndex', authMiddleware, async (req, res) => {
+  const appt = await Appointment.findById(req.params.id);
+  appt.services[req.params.sIndex].payments.splice(req.params.pIndex, 1);
+  await appt.save();
+  res.redirect(`/client/${appt.clientId}`);
+});
+
+router.post('/appointment/:id/remove-payment/product/:pIndex/:ppIndex', authMiddleware, async (req, res) => {
+  const appt = await Appointment.findById(req.params.id);
+  appt.products[req.params.pIndex].payments.splice(req.params.ppIndex, 1);
+  await appt.save();
+  res.redirect(`/client/${appt.clientId}`);
+});
+
+router.post('/appointment/:id/pay-service/:index', authMiddleware, async (req, res) => {
+  const { amount, description } = req.body;
+  const appt = await Appointment.findById(req.params.id);
+  const item = appt.services[req.params.index];
+
+  const valor = parseFloat(amount);
+  if (isNaN(valor) || valor <= 0) return res.send("Valor inválido para pagamento.");
+
+  item.payments = item.payments || [];
+  item.payments.push({ amount: valor, paidAt: new Date(), description: description || '' });
+
+  await appt.save();
+  res.redirect(`/client/${appt.clientId}`);
+});
+
+router.post('/appointment/:id/pay-product/:index', authMiddleware, async (req, res) => {
+  const { amount, description } = req.body;
+  const appt = await Appointment.findById(req.params.id);
+  const item = appt.products[req.params.index];
+
+  const valor = parseFloat(amount);
+  if (isNaN(valor) || valor <= 0) return res.send("Valor inválido para pagamento.");
+
+  item.payments = item.payments || [];
+  item.payments.push({ amount: valor, paidAt: new Date(), description: description || '' });
+
+  await appt.save();
+  res.redirect(`/client/${appt.clientId}`);
+});
+
 router.get('/agendamentos-por-dia', authMiddleware, async (req, res) => {
   const { date } = req.query;
 
@@ -192,60 +227,6 @@ router.get('/agendamentos-por-dia', authMiddleware, async (req, res) => {
   const apenasComServicos = agendamentos.filter(a => a.services.length > 0);
 
   res.render('agenda-dia', { date, results: apenasComServicos });
-});
-
-router.post('/appointment/:id/pay-service/:index', authMiddleware, async (req, res) => {
-  const { amount, description } = req.body;
-  const appt = await Appointment.findById(req.params.id);
-  const item = appt.services[req.params.index];
-
-  const valor = parseFloat(amount);
-  if (isNaN(valor) || valor <= 0) return res.send("Valor inválido para pagamento.");
-
-  item.payments.push({
-    amount: valor,
-    paidAt: new Date(),
-    description: description || ''
-  });
-
-  await appt.save();
-  res.redirect(`/client/${appt.clientId}`);
-});
-
-router.post('/appointment/:id/pay-product/:index', authMiddleware, async (req, res) => {
-  const { amount, description } = req.body;
-  const appt = await Appointment.findById(req.params.id);
-  const item = appt.products[req.params.index];
-
-  const valor = parseFloat(amount);
-  if (isNaN(valor) || valor <= 0) return res.send("Valor inválido para pagamento.");
-
-  item.payments.push({
-    amount: valor,
-    paidAt: new Date(),
-    description: description || ''
-  });
-
-  await appt.save();
-  res.redirect(`/client/${appt.clientId}`);
-});
-
-router.post('/appointment/:id/remove-payment/service/:index', authMiddleware, async (req, res) => {
-  const appt = await Appointment.findById(req.params.id);
-  appt.services[req.params.index].paid = 0;
-  appt.services[req.params.index].paidAt = null;
-  appt.services[req.params.index].description = '';
-  await appt.save();
-  res.redirect(`/client/${appt.clientId}`);
-});
-
-router.post('/appointment/:id/remove-payment/product/:index', authMiddleware, async (req, res) => {
-  const appt = await Appointment.findById(req.params.id);
-  appt.products[req.params.index].paid = 0;
-  appt.products[req.params.index].paidAt = null;
-  appt.products[req.params.index].description = '';
-  await appt.save();
-  res.redirect(`/client/${appt.clientId}`);
 });
 
 module.exports = router;
