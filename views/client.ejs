@@ -19,82 +19,131 @@
     <form action="/appointment" method="POST" onsubmit="return processForm()" class="space-y-4 mb-6">
       <input type="hidden" name="clientId" value="<%= client._id %>">
       <input type="date" name="date" required class="w-full p-2 border rounded">
+      <input type="time" name="time" required class="w-full p-2 border rounded">
+      <input type="number" name="duration" placeholder="Duração em minutos" required class="w-full p-2 border rounded">
 
-      <!-- SERVIÇOS -->
       <div>
         <h3 class="font-semibold text-lg mb-2">Serviços</h3>
         <div id="services" class="space-y-2"></div>
         <button type="button" onclick="addService()" class="bg-green-500 text-white px-3 py-1 rounded">+ Adicionar Serviço</button>
       </div>
 
-      <!-- PRODUTOS -->
       <div>
         <h3 class="font-semibold text-lg mb-2">Produtos</h3>
         <div id="products" class="space-y-2"></div>
         <button type="button" onclick="addProduct()" class="bg-purple-500 text-white px-3 py-1 rounded">+ Adicionar Produto</button>
       </div>
 
-      <!-- Campos ocultos com JSON final -->
       <input type="hidden" name="services" id="servicesInput">
       <input type="hidden" name="products" id="productsInput">
 
       <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Agendar</button>
     </form>
 
-   <h2 class="text-xl font-semibold mb-3">Agendamentos</h2>
-<ul class="space-y-4">
-  <% appointments.forEach(a => { %>
-    <% if (a.services.length > 0 || a.products.length > 0) { %>
-      <li class="p-4 bg-gray-50 rounded border">
-        <strong class="block mb-2"><%= a.date.toLocaleDateString() %></strong>
+    <h2 class="text-xl font-semibold mb-3">Agendamentos</h2>
+    <ul class="space-y-4">
+      <% appointments.forEach(a => { %>
+        <% if (a.services.length > 0 || a.products.length > 0) { %>
+          <li class="p-4 bg-gray-50 rounded border">
+            <strong class="block mb-2">
+              <%= a.date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) %> às
+              <%= a.date.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) %>
+              (<%= a.duration %> min)
+            </strong>
 
-        <% if (a.services.length > 0) { %>
-          <div>
-            <span class="font-semibold">Serviços:</span>
-            <ul class="list-disc pl-6">
-              <% a.services.forEach((s, i) => { %>
-                <li class="flex justify-between">
-                  <span><%= s.name %> - R$ <%= s.price %></span>
-                  <form action="/appointment/<%= a._id %>/remove-service/<%= i %>" method="POST" onsubmit="return confirm('Excluir serviço?')">
-                    <button class="text-red-600 text-sm hover:underline">Excluir</button>
-                  </form>
-                </li>
-              <% }) %>
-            </ul>
-          </div>
+            <% if (a.services.length > 0) { %>
+              <div>
+                <span class="font-semibold">Serviços:</span>
+                <ul class="list-disc pl-6">
+                  <% a.services.forEach((s, i) => { %>
+                    <li class="flex justify-between items-start">
+                      <span>
+                        <%= s.name %> - R$ <%= s.price %><br>
+                        <% if (s.payments && s.payments.length > 0) { %>
+                          <ul class="ml-4 text-sm text-gray-800 mt-1">
+                            <% s.payments.forEach(function(p) { %>
+                              <li>
+                                💵 Pago: R$ <%= p.amount %> em <%= new Date(p.paidAt).toLocaleDateString('pt-BR') %>
+                                <% if (p.description) { %>
+                                  <br>📝 <em><%= p.description %></em>
+                                <% } %>
+                              </li>
+                            <% }); %>
+                          </ul>
+                        <% } %>
+                        <form action="/appointment/<%= a._id %>/remove-payment/service/<%= i %>" method="POST" class="inline">
+                          <button class="text-red-500 text-sm mt-1 hover:underline" onclick="return confirm('Remover pagamento?')">Remover</button>
+                        </form>
+                      </span>
+                      <div class="flex gap-2">
+                        <form action="/appointment/<%= a._id %>/remove-service/<%= i %>" method="POST" onsubmit="return confirm('Excluir serviço?')">
+                          <button class="text-red-600 text-sm hover:underline">Excluir</button>
+                        </form>
+                        <form action="/appointment/<%= a._id %>/pay-service/<%= i %>" method="POST" onsubmit="return pagarValor(this)">
+                          <input type="hidden" name="amount">
+                          <button class="text-green-600 text-sm hover:underline">💰 Pagar</button>
+                        </form>
+                      </div>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            <% } %>
+
+            <% if (a.products.length > 0) { %>
+              <div class="mt-2">
+                <span class="font-semibold">Produtos:</span>
+                <ul class="list-disc pl-6">
+                  <% a.products.forEach((p, i) => { %>
+                    <li class="flex justify-between items-start">
+                      <span>
+                        <%= p.name %> - R$ <%= p.price %><br>
+                        <% if (p.payments && p.payments.length > 0) { %>
+                          <ul class="ml-4 text-sm text-gray-800 mt-1">
+                            <% p.payments.forEach(function(pg) { %>
+                              <li>
+                                💵 Pago: R$ <%= pg.amount %> em <%= new Date(pg.paidAt).toLocaleDateString('pt-BR') %>
+                                <% if (pg.description) { %>
+                                  <br>📝 <em><%= pg.description %></em>
+                                <% } %>
+                              </li>
+                            <% }); %>
+                          </ul>
+                        <% } %>
+                        <form action="/appointment/<%= a._id %>/remove-payment/product/<%= i %>" method="POST" class="inline">
+                          <button class="text-red-500 text-sm mt-1 hover:underline" onclick="return confirm('Remover pagamento?')">Remover</button>
+                        </form>
+                      </span>
+                      <div class="flex gap-2">
+                        <form action="/appointment/<%= a._id %>/remove-product/<%= i %>" method="POST" onsubmit="return confirm('Excluir produto?')">
+                          <button class="text-red-600 text-sm hover:underline">Excluir</button>
+                        </form>
+                        <form action="/appointment/<%= a._id %>/pay-product/<%= i %>" method="POST" onsubmit="return pagarValor(this)">
+                          <input type="hidden" name="amount">
+                          <button class="text-green-600 text-sm hover:underline">💰 Pagar</button>
+                        </form>
+                      </div>
+                    </li>
+                  <% }) %>
+                </ul>
+              </div>
+            <% } %>
+          </li>
         <% } %>
-
-        <% if (a.products.length > 0) { %>
-          <div class="mt-2">
-            <span class="font-semibold">Produtos:</span>
-            <ul class="list-disc pl-6">
-              <% a.products.forEach((p, i) => { %>
-                <li class="flex justify-between">
-                  <span><%= p.name %> - R$ <%= p.price %></span>
-                  <form action="/appointment/<%= a._id %>/remove-product/<%= i %>" method="POST" onsubmit="return confirm('Excluir produto?')">
-                    <button class="text-red-600 text-sm hover:underline">Excluir</button>
-                  </form>
-                </li>
-              <% }) %>
-            </ul>
-          </div>
-        <% } %>
-      </li>
-    <% } %>
-  <% }) %>
-</ul>
-
-
+      <% }) %>
+    </ul>
 
     <div class="mt-6">
       <h3 class="text-lg font-semibold">Total por Serviços: <span class="text-green-600">R$ <%= totalService %></span></h3>
       <h3 class="text-lg font-semibold">Total por Produtos: <span class="text-purple-600">R$ <%= totalProduct %></span></h3>
-      <h2 class="text-xl font-bold mt-2">Total Geral: <span class="text-blue-700">R$ <%= total %></span></h2>
+      <h3 class="text-lg font-semibold">Total Pago: <span class="text-blue-700">R$ <%= totalPaid %></span></h3>
+      <h2 class="text-xl font-bold mt-2">Total Restante: <span class="text-red-600">R$ <%= total - totalPaid %></span></h2>
     </div>
 
-    <a href="/" class="inline-block mt-6 text-blue-600 hover:underline">← Voltar</a>
+    <a href="/" class="inline-block mt-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 shadow-md transition">
+      🚪 Voltar
+    </a>
 
-    <!-- Script -->
     <script>
       function addService() {
         const container = document.getElementById('services');
@@ -145,6 +194,36 @@
 
         document.getElementById('servicesInput').value = JSON.stringify(services);
         document.getElementById('productsInput').value = JSON.stringify(products);
+
+        return true;
+      }
+
+      function pagarValor(form) {
+        const valor = prompt('Informe o valor pago:');
+        const numero = parseFloat(valor);
+
+        if (!valor || isNaN(numero) || numero <= 0) {
+          alert('Valor inválido.');
+          return false;
+        }
+
+        const descricao = prompt('Descrição do pagamento (opcional):');
+
+        form.querySelectorAll('input[name="amount"], input[name="description"]').forEach(el => el.remove());
+
+        const amountInput = document.createElement('input');
+        amountInput.type = 'hidden';
+        amountInput.name = 'amount';
+        amountInput.value = numero;
+        form.appendChild(amountInput);
+
+        if (descricao) {
+          const descInput = document.createElement('input');
+          descInput.type = 'hidden';
+          descInput.name = 'description';
+          descInput.value = descricao;
+          form.appendChild(descInput);
+        }
 
         return true;
       }
