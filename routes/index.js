@@ -119,7 +119,15 @@ router.post('/appointment', authMiddleware, async (req, res) => {
 
 router.get('/client/:id', authMiddleware, async (req, res) => {
   const client = await Client.findById(req.params.id);
-  const appointments = await Appointment.find({ clientId: client._id });
+
+  // Busca todos os agendamentos do cliente
+  const allAppointments = await Appointment.find({ clientId: client._id });
+
+  // Filtra para exibir apenas os agendamentos a partir de hoje (meia-noite)
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const appointments = allAppointments.filter(appt => appt.date >= hoje);
 
   let totalService = 0;
   let totalProduct = 0;
@@ -128,11 +136,15 @@ router.get('/client/:id', authMiddleware, async (req, res) => {
   appointments.forEach(appt => {
     appt.services.forEach(s => {
       totalService += s.price;
-      totalPaid += (s.payments || []).reduce((sum, p) => sum + p.amount, 0);
+      if (s.payments && s.payments.length > 0) {
+        totalPaid += s.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      }
     });
     appt.products.forEach(p => {
       totalProduct += p.price;
-      totalPaid += (p.payments || []).reduce((sum, p) => sum + p.amount, 0);
+      if (p.payments && p.payments.length > 0) {
+        totalPaid += p.payments.reduce((sum, pg) => sum + (pg.amount || 0), 0);
+      }
     });
   });
 
@@ -228,5 +240,45 @@ router.get('/agendamentos-por-dia', authMiddleware, async (req, res) => {
 
   res.render('agenda-dia', { date, results: apenasComServicos });
 });
+
+router.get('/client/:id/historico', authMiddleware, async (req, res) => {
+  const client = await Client.findById(req.params.id);
+
+  const allAppointments = await Appointment.find({ clientId: client._id });
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const appointments = allAppointments.filter(appt => appt.date < hoje);
+
+  let totalService = 0;
+  let totalProduct = 0;
+  let totalPaid = 0;
+
+  appointments.forEach(appt => {
+    appt.services.forEach(s => {
+      totalService += s.price;
+      if (s.payments && s.payments.length > 0) {
+        totalPaid += s.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      }
+    });
+    appt.products.forEach(p => {
+      totalProduct += p.price;
+      if (p.payments && p.payments.length > 0) {
+        totalPaid += p.payments.reduce((sum, pg) => sum + (pg.amount || 0), 0);
+      }
+    });
+  });
+
+  res.render('client', {
+    client,
+    appointments,
+    totalService,
+    totalProduct,
+    total: totalService + totalProduct,
+    totalPaid
+  });
+});
+
 
 module.exports = router;
