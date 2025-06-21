@@ -14,21 +14,16 @@
     </form>
 
     <% if (results.length === 0 && date) { %>
-      <p class="text-gray-500">Nenhum agendamento encontrado para <strong><%= date %></strong>.</p>
+      <p class="text-gray-500">
+        Nenhum agendamento encontrado para <strong><%= date %></strong>.
+      </p>
     <% } %>
 
     <% results.forEach(r => { %>
       <div class="mb-4 p-4 bg-gray-50 rounded border">
         <strong class="block text-lg mb-1">
-          <%= r.clientId.name %> – 
-          <%= new Date(r.date).toLocaleTimeString('pt-BR', { 
-                timeZone: 'America/Sao_Paulo',
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: false 
-              }) %>
+          <%= r.clientId.name %> – <%= r.timeFormatted %>
         </strong>
-
         <% if (r.services.length) { %>
           <p class="font-semibold">Serviços:</p>
           <ul class="list-disc pl-6">
