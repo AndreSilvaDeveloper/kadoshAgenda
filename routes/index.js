@@ -1,13 +1,12 @@
-// routes/index.js
 const express = require('express');
 const router = express.Router();
 const Client = require('../models/Client');
 const Appointment = require('../models/Appointment');
 const dayjs = require('dayjs');
+require('dayjs/plugin/utc');
+require('dayjs/plugin/timezone');
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
-
-// configura Day.js para lidar com UTC e timezone
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -275,6 +274,34 @@ router.get('/agendamentos-por-dia', authMiddleware, async (req, res) => {
     }));
 
   res.render('agenda-dia', { date, results });
+});
+
+
+// ── EDIÇÃO DE CLIENTE ─────────────────────────────────────────────────────────
+router.post('/client/:id/edit', async (req, res) => {
+  const { name, phone } = req.body;
+  await Client.findByIdAndUpdate(req.params.id, { name, phone });
+  res.redirect(`/client/${req.params.id}`);
+});
+
+// ── EDIÇÃO DE SERVIÇO ─────────────────────────────────────────────────────────
+router.post('/appointment/:id/edit-service/:idx', async (req, res) => {
+  const a = await Appointment.findById(req.params.id);
+  const { name, price } = req.body;
+  a.services[req.params.idx].name  = name;
+  a.services[req.params.idx].price = parseFloat(price);
+  await a.save();
+  res.redirect(`/client/${a.clientId}`);
+});
+
+// ── EDIÇÃO DE PRODUTO ─────────────────────────────────────────────────────────
+router.post('/appointment/:id/edit-product/:idx', async (req, res) => {
+  const a = await Appointment.findById(req.params.id);
+  const { name, price } = req.body;
+  a.products[req.params.idx].name  = name;
+  a.products[req.params.idx].price = parseFloat(price);
+  await a.save();
+  res.redirect(`/client/${a.clientId}`);
 });
 
 
