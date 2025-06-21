@@ -245,7 +245,9 @@ router.post('/appointment/:id/remove-payment/product/:pIdx/:ppIdx', authMiddlewa
   res.redirect(`/client/${a.clientId}`);
 });
 
-// --- Agendamentos por dia (24h SP) ---
+
+
+// agenda por dia
 router.get('/agendamentos-por-dia', authMiddleware, async (req, res) => {
   const { date } = req.query;
   if (!date) {
@@ -255,20 +257,25 @@ router.get('/agendamentos-por-dia', authMiddleware, async (req, res) => {
   const start = dayjs.tz(`${date}T00:00:00`, 'America/Sao_Paulo').toDate();
   const end   = dayjs.tz(`${date}T23:59:59`, 'America/Sao_Paulo').toDate();
 
-  const ags = await Appointment.find({ date: { $gte: start, $lte: end } })
-    .populate('clientId');
+  // busca e popula cliente, já ordenando por date ASC
+  const ags = await Appointment.find({
+    date: { $gte: start, $lte: end }
+  })
+  .sort({ date: 1 })            // ← aqui
+  .populate('clientId');
 
   const results = ags
     .filter(a => a.services.length > 0)
     .map(a => ({
-      clientId: a.clientId,
-      services: a.services,
+      clientId:    a.clientId,
+      services:    a.services,
       timeFormatted: dayjs(a.date)
-        .tz('America/Sao_Paulo')
-        .format('HH:mm')
+                       .tz('America/Sao_Paulo')
+                       .format('HH:mm')
     }));
 
   res.render('agenda-dia', { date, results });
 });
+
 
 module.exports = router;
