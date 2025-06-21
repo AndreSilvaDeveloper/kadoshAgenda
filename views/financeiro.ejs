@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Financeiro</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-5xl mx-auto">
+
+    <!-- Título -->
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">📊 Financeiro Geral</h1>
+
+    <!-- Resumo em Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded shadow-sm">
+        <h2 class="text-lg font-medium text-green-700">Serviços Recebidos</h2>
+        <p class="mt-2 text-2xl font-bold text-green-800">R$ <%= totalReceivedServices %></p>
+      </div>
+      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded shadow-sm">
+        <h2 class="text-lg font-medium text-blue-700">Produtos Recebidos</h2>
+        <p class="mt-2 text-2xl font-bold text-blue-800">R$ <%= totalReceivedProducts %></p>
+      </div>
+      <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded shadow-sm">
+        <h2 class="text-lg font-medium text-indigo-700">Total Geral Recebido</h2>
+        <p class="mt-2 text-2xl font-bold text-indigo-800">
+          R$ <%= (totalReceivedServices + totalReceivedProducts).toFixed(2) %>
+        </p>
+      </div>
+    </section>
+
+    <div class="bg-white p-6 rounded shadow mb-8">
+      <h3 class="text-xl font-semibold mb-4">Recebimentos Detalhados</h3>
+
+      <!-- Serviços -->
+      <div class="mb-6">
+        <h4 class="font-semibold text-gray-700 mb-2">💡 Serviços</h4>
+        <% if (receivedServices.length) { %>
+          <ul class="divide-y divide-gray-200">
+            <% receivedServices.forEach(r => { %>
+              <li class="py-3 flex justify-between items-start">
+                <div>
+                  <span class="font-medium text-gray-800"><%= r.client %></span>
+                  <span class="text-gray-500">/ <%= r.apptOn %></span>
+                  <div class="text-gray-700"><%= r.item %></div>
+                  <% if (r.desc) { %>
+                    <div class="text-sm text-gray-500">📝 <%= r.desc %></div>
+                  <% } %>
+                </div>
+                <div class="text-green-600 font-bold">R$ <%= r.amount %></div>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <p class="text-gray-500">Nenhum pagamento de serviço registrado.</p>
+        <% } %>
+      </div>
+
+      <!-- Produtos -->
+      <div>
+        <h4 class="font-semibold text-gray-700 mb-2">🛍️ Produtos</h4>
+        <% if (receivedProducts.length) { %>
+          <ul class="divide-y divide-gray-200">
+            <% receivedProducts.forEach(r => { %>
+              <li class="py-3 flex justify-between items-start">
+                <div>
+                  <span class="font-medium text-gray-800"><%= r.client %></span>
+                  <span class="text-gray-500">/ <%= r.apptOn %></span>
+                  <div class="text-gray-700"><%= r.item %></div>
+                  <% if (r.desc) { %>
+                    <div class="text-sm text-gray-500">📝 <%= r.desc %></div>
+                  <% } %>
+                </div>
+                <div class="text-blue-600 font-bold">R$ <%= r.amount %></div>
+              </li>
+            <% }); %>
+          </ul>
+        <% } else { %>
+          <p class="text-gray-500">Nenhum pagamento de produto registrado.</p>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Pendentes (mantém igual se quiser) -->
+    <div class="bg-white p-6 rounded shadow mb-8">
+      <h3 class="text-xl font-semibold mb-4">Pendentes</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="font-semibold text-gray-700 mb-2">⏳ Serviços Pendentes (R$ <%= totalPendingServices %>)</h4>
+          <% if (pendingServices.length) { %>
+            <ul class="list-disc pl-6 text-gray-700">
+              <% pendingServices.forEach(p => { %>
+                <li>
+                  <strong><%= p.client %></strong> / <%= p.apptOn %> – <%= p.item %> (R$ <%= p.amount %>)
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="text-gray-500">Nenhum valor pendente de serviço.</p>
+          <% } %>
+        </div>
+        <div>
+          <h4 class="font-semibold text-gray-700 mb-2">⏳ Produtos Pendentes (R$ <%= totalPendingProducts %>)</h4>
+          <% if (pendingProducts.length) { %>
+            <ul class="list-disc pl-6 text-gray-700">
+              <% pendingProducts.forEach(p => { %>
+                <li>
+                  <strong><%= p.client %></strong> / <%= p.apptOn %> – <%= p.item %> (R$ <%= p.amount %>)
+                </li>
+              <% }); %>
+            </ul>
+          <% } else { %>
+            <p class="text-gray-500">Nenhum valor pendente de produto.</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botão voltar -->
+    <a href="/" class="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+      ⬅ Voltar
+    </a>
+  </div>
+</body>
+</html>

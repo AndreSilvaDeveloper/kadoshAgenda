@@ -314,4 +314,88 @@ router.post('/appointment/:id/edit-product/:idx', async (req, res) => {
 });
 
 
+
+router.get('/financeiro', authMiddleware, async (req, res) => {
+  // busca todos os agendamentos com cliente
+  const ags = await Appointment.find().populate('clientId');
+
+  // arrays para detalhamento
+  const receivedServices  = [];
+  const pendingServices   = [];
+  const receivedProducts  = [];
+  const pendingProducts   = [];
+
+  let totalReceivedServices = 0;
+  let totalPendingServices  = 0;
+  let totalReceivedProducts = 0;
+  let totalPendingProducts  = 0;
+
+  ags.forEach(a => {
+    const clientName    = a.clientId.name;
+    const apptDateStr   = a.date.toLocaleDateString('pt-BR');
+    const apptTimeStr   = a.date.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit', hour12:false });
+
+    // serviços
+    a.services.forEach(s => {
+      const paidSum = (s.payments || []).reduce((sum,p)=>sum + (p.amount||0), 0);
+      // detalha pagamentos já recebidos
+      s.payments.forEach(p => {
+        receivedServices.push({
+          client: clientName,
+          apptOn: `${apptDateStr} ${apptTimeStr}`,
+          item: s.name,
+          when: new Date(p.paidAt).toLocaleDateString('pt-BR'),
+          amount: p.amount,
+          desc: p.description || ''
+        });
+        totalReceivedServices += p.amount;
+      });
+      // calcula pendente
+      const pend = s.price - paidSum;
+      if (pend > 0) {
+        pendingServices.push({
+          client: clientName,
+          apptOn: `${apptDateStr} ${apptTimeStr}`,
+          item: s.name,
+          amount: pend
+        });
+        totalPendingServices += pend;
+      }
+    });
+
+    // produtos (mesma lógica)
+    a.products.forEach(pdt => {
+      const paidSum = (pdt.payments || []).reduce((sum,p)=>sum + (p.amount||0), 0);
+      pdt.payments.forEach(p => {
+        receivedProducts.push({
+          client: clientName,
+          apptOn: `${apptDateStr} ${apptTimeStr}`,
+          item: pdt.name,
+          when: new Date(p.paidAt).toLocaleDateString('pt-BR'),
+          amount: p.amount,
+          desc: p.description || ''
+        });
+        totalReceivedProducts += p.amount;
+      });
+      const pend = pdt.price - paidSum;
+      if (pend > 0) {
+        pendingProducts.push({
+          client: clientName,
+          apptOn: `${apptDateStr} ${apptTimeStr}`,
+          item: pdt.name,
+          amount: pend
+        });
+        totalPendingProducts += pend;
+      }
+    });
+  });
+
+  res.render('financeiro', {
+    receivedServices,  pendingServices,
+    receivedProducts,  pendingProducts,
+    totalReceivedServices, totalPendingServices,
+    totalReceivedProducts, totalPendingProducts
+  });
+});
+
 module.exports = router;
