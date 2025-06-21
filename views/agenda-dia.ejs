@@ -19,13 +19,21 @@
 
     <% results.forEach(r => { %>
       <div class="mb-4 p-4 bg-gray-50 rounded border">
-        <strong class="block text-lg mb-1"><%= r.clientId.name %> - <%= r.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></strong>
+        <strong class="block text-lg mb-1">
+          <%= r.clientId.name %> – 
+          <%= new Date(r.date).toLocaleTimeString('pt-BR', { 
+                timeZone: 'America/Sao_Paulo',
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: false 
+              }) %>
+        </strong>
 
         <% if (r.services.length) { %>
           <p class="font-semibold">Serviços:</p>
           <ul class="list-disc pl-6">
             <% r.services.forEach(s => { %>
-              <li><%= s.name %> - R$ <%= s.price %></li>
+              <li><%= s.name %> – R$ <%= s.price %></li>
             <% }) %>
           </ul>
         <% } else { %>
@@ -34,9 +42,9 @@
       </div>
     <% }) %>
 
-<a href="/" class="inline-block mt-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 shadow-md">
-  ⬅ Voltar
-</a>
+    <a href="/" class="inline-block mt-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 shadow-md">
+      ⬅ Voltar
+    </a>
   </div>
 </body>
 </html>

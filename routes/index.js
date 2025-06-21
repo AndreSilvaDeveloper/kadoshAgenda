@@ -1,66 +1,16 @@
-const express = require('express');
-const router = express.Router();
-const Client = require('../models/Client');
-const Appointment = require('../models/Appointment');
-
-function authMiddleware(req, res, next) {
-  if (req.session && req.session.loggedIn) {
-    next();
-  } else {
-    res.redirect('/login');
-  }
-}
-
-router.get('/login', (req, res) => {
-  res.render('login', { error: null });
-});
-
-router.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username === 'samara' && password === '160793') {
-    req.session.loggedIn = true;
-    res.redirect('/');
-  } else {
-    res.render('login', { error: 'Usuário ou senha inválidos' });
-  }
-});
-
-router.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/login');
-  });
-});
-
-router.get('/search', authMiddleware, async (req, res) => {
-  const query = req.query.q?.trim() || "";
-  const regex = new RegExp(query, 'i');
-  const clients = await Client.find({
-    $or: [
-      { name: regex },
-      { phone: regex }
-    ]
-  });
-  res.render('home', { clients });
-});
-
-router.get('/', authMiddleware, async (req, res) => {
-  const clients = await Client.find();
-  res.render('home', { clients });
-});
-
-router.post('/client', authMiddleware, async (req, res) => {
-  const { name, phone } = req.body;
-  await Client.create({ name, phone });
-  res.redirect('/');
-});
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 router.post('/appointment', authMiddleware, async (req, res) => {
   const { clientId, date, time, duration, services, products, force } = req.body;
   const parsedServices = services ? JSON.parse(services) : [];
   const parsedProducts = products ? JSON.parse(products) : [];
 
-  const localDate = new Date(`${date}T${time}:00-03:00`);
-  const start = new Date(localDate);
+  // Usa dayjs para converter data e hora para UTC com base na zona "America/Sao_Paulo"
+  const start = dayjs.tz(`${date}T${time}`, 'America/Sao_Paulo').toDate();
   const duracao = parseInt(duration);
   const end = new Date(start.getTime() + duracao * 60000);
 
