@@ -56,18 +56,20 @@ router.post('/client', authMiddleware, async (req, res) => {
   res.redirect('/');
 });
 
-// --- Criar Agendamento ---
+
+
+
 router.post('/appointment', authMiddleware, async (req, res) => {
   const { clientId, date, time, duration, services, products, force } = req.body;
   const parsedServices = services ? JSON.parse(services) : [];
   const parsedProducts = products ? JSON.parse(products) : [];
 
-  // monta início no fuso de São Paulo
+  // monta início e fim no fuso de SP
   const start = dayjs.tz(`${date}T${time}`, 'America/Sao_Paulo').toDate();
   const dur   = parseInt(duration, 10);
   const end   = new Date(start.getTime() + dur * 60000);
 
-  // verifica conflito
+  // *** AQUI você precisa declarar 'conflict' ***
   const conflict = await Appointment.findOne({
     date: { $lt: end },
     $expr: {
@@ -80,32 +82,39 @@ router.post('/appointment', authMiddleware, async (req, res) => {
 
   if (conflict && !force) {
     return res.send(`
-      <script>
-        if (confirm("⚠️ Já existe outro agendamento nesse horário. Deseja agendar assim mesmo?")) {
-          const f = document.createElement('form');
-          f.method = 'POST';
-          f.action = '/appointment';
-          const data = ${JSON.stringify({ clientId, date, time, duration, services, products, force: true })};
-          for (const k in data) {
-            const i = document.createElement('input');
-            i.type = 'hidden';
-            i.name = k;
-            i.value = typeof data[k] === 'string' ? data[k] : JSON.stringify(data[k]);
-            f.appendChild(i);
-          }
-          document.body.appendChild(f);
-          f.submit();
-        } else {
-          history.back();
-        }
-      </script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Confirmar Agendamento</title></head>
+<body>
+  <script>
+    if (confirm("⚠️ Já existe outro agendamento nesse horário. Deseja agendar assim mesmo?")) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/appointment';
+      const data = ${JSON.stringify({ clientId, date, time, duration, services, products, force: true })};
+      for (const key in data) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = typeof data[key] === 'string'
+          ? data[key]
+          : JSON.stringify(data[key]);
+        form.appendChild(input);
+      }
+      document.body.appendChild(form);
+      form.submit();
+    } else {
+      history.back();
+    }
+  </script>
+</body>
+</html>
     `);
   }
 
-  // inicializa pagamentos
+  // se não houver conflito (ou veio force=true), salva normalmente
   parsedServices.forEach(s => s.payments = []);
   parsedProducts.forEach(p => p.payments = []);
-
   await Appointment.create({
     clientId,
     date: start,
